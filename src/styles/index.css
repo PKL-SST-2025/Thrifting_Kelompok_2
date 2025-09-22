@@ -1,1 +1,205 @@
 @import 'tailwindcss';
+
+/* Custom styles for thrifting website */
+body {
+  font-family: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Mobile-first responsive design */
+/* Touch-friendly button sizes */
+.btn-primary {
+  background-color: black;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transform: scale(1);
+  transition: all 0.2s ease-in-out;
+  min-height: 44px; /* Apple's recommended minimum touch target */
+  min-width: 44px;
+}
+
+.btn-primary:hover {
+  background-color: #374151;
+  transform: scale(1.05);
+}
+
+.btn-secondary {
+  background-color: white;
+  color: black;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  border: 1px solid #e5e7eb;
+  transform: scale(1);
+  transition: all 0.2s ease-in-out;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.btn-secondary:hover {
+  background-color: #f9fafb;
+  transform: scale(1.05);
+}
+
+/* Touch-friendly icons and buttons */
+button {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Product card hover effects */
+.product-card {
+  transform: scale(1);
+  transition: all 0.3s ease-in-out;
+}
+
+.product-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Hero section overlay effect */
+.hero-overlay {
+  background: linear-gradient(45deg, rgba(0,0,0,0.3), rgba(0,0,0,0.1));
+}
+
+/* Navbar blur effect */
+.navbar-blur {
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+/* Collection section styles */
+.collection-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.collection-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1));
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.collection-item:hover::before {
+  transform: translateX(100%);
+}
+
+/* Trust section cards */
+.trust-card {
+  transform: scale(1);
+  transition: all 0.3s ease-in-out;
+}
+
+.trust-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2rem;
+  }
+  
+  .section-title {
+    font-size: 1.5rem;
+  }
+
+  /* Increase touch targets on mobile */
+  button, a {
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+  }
+
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Mobile-friendly spacing */
+  .mobile-spacing {
+    padding: 1rem;
+    margin: 0.5rem 0;
+  }
+}
+
+/* Very small screens (< 375px) */
+@media (max-width: 374px) {
+  .hero-title {
+    font-size: 1.75rem;
+  }
+  
+  button {
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Tablet styles */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .hero-title {
+    font-size: 3rem;
+  }
+  
+  .section-title {
+    font-size: 2rem;
+  }
+}
+
+/* Loading skeleton animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.loading-skeleton {
+  animation: shimmer 1.5s ease-in-out infinite;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200px 100%;
+}
+
+/* Better focus states for accessibility */
+button:focus,
+input:focus,
+a:focus {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
+}
+
+/* Custom scrollbar for mobile */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
