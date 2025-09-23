@@ -1,7 +1,9 @@
 import { Component } from "solid-js";
+import { A } from "@solidjs/router";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import slideshow from "../assets/abbey road (1969).jpg"
+import imgver from "../assets/1000021576.jpg"
 
 const Home: Component = () => {
   return (
@@ -21,21 +23,21 @@ const Home: Component = () => {
       <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
         <h2 class="text-2xl sm:text-3xl font-bold text-center mb-8 sm:mb-12">New Arrivals</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8">
-          <div class="bg-gray-200 aspect-square rounded-lg overflow-hidden group cursor-pointer product-card">
-            <div class="w-full h-full bg-gray-300 flex items-center justify-center">
+          <A href="/product/1" class="bg-gray-200 aspect-square rounded-lg overflow-hidden group cursor-pointer product-card">
+            <div class="w-full h-full bg-gray-300 flex items-center justify-center group-hover:bg-gray-400 transition-colors">
               <span class="text-gray-500">Product Image</span>
             </div>
-          </div>
-          <div class="bg-gray-200 aspect-square rounded-lg overflow-hidden group cursor-pointer product-card">
-            <div class="w-full h-full bg-gray-300 flex items-center justify-center">
+          </A>
+          <A href="/product/2" class="bg-gray-200 aspect-square rounded-lg overflow-hidden group cursor-pointer product-card">
+            <div class="w-full h-full bg-gray-300 flex items-center justify-center group-hover:bg-gray-400 transition-colors">
               <span class="text-gray-500">Product Image</span>
             </div>
-          </div>
-          <div class="bg-gray-200 aspect-square rounded-lg overflow-hidden group cursor-pointer product-card sm:col-span-2 lg:col-span-1">
-            <div class="w-full h-full bg-gray-300 flex items-center justify-center">
+          </A>
+          <A href="/product/3" class="bg-gray-200 aspect-square rounded-lg overflow-hidden group cursor-pointer product-card sm:col-span-2 lg:col-span-1">
+            <div class="w-full h-full bg-gray-300 flex items-center justify-center group-hover:bg-gray-400 transition-colors">
               <span class="text-gray-500">Product Image</span>
             </div>
-          </div>
+          </A>
         </div>
         
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8">
@@ -54,9 +56,11 @@ const Home: Component = () => {
         </div>
 
         <div class="text-center">
-          <button class="bg-black text-white px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base rounded hover:bg-gray-800 transition-colors w-full sm:w-auto">
-            VIEW ALL PRODUCTS
-          </button>
+          <A href="/products">
+            <button class="bg-black text-white px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base rounded hover:bg-gray-800 transition-colors w-full sm:w-auto">
+              VIEW ALL PRODUCTS
+            </button>
+          </A>
         </div>
       </section>
 
@@ -65,9 +69,9 @@ const Home: Component = () => {
         <div class="w-full px-0">
           <div class="relative h-48 sm:h-64 md:h-80 lg:h-96 bg-gray-200 overflow-hidden mb-6 sm:mb-8">
             <img 
-              src="https://images.unsplash.com/photo-1469334031218-e382a71b716b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80" 
+              src={imgver}
               alt="Collection Image" 
-              class="w-full h-full object-cover"
+              class="w-full h-full object-cover object-top"
             />
             <div class="absolute inset-0"></div>
           </div>
@@ -110,9 +114,9 @@ const Home: Component = () => {
 
         <div class="flex items-center justify-center gap-4 sm:gap-6 lg:gap-8">
           {/* Left Product */}
-          <div class="flex-shrink-0 w-24 sm:w-32 md:w-40">
-            <div class="bg-gray-200 aspect-[3/4] rounded-lg overflow-hidden">
-              <div class="w-full h-full bg-gray-300 flex items-center justify-center">
+          <A href="/product/4" class="flex-shrink-0 w-24 sm:w-32 md:w-40 group cursor-pointer">
+            <div class="bg-gray-200 aspect-[3/4] rounded-lg overflow-hidden group-hover:bg-gray-300 transition-colors">
+              <div class="w-full h-full bg-gray-300 flex items-center justify-center group-hover:bg-gray-400 transition-colors">
                 <span class="text-gray-500 text-xs">Product</span>
               </div>
             </div>
@@ -120,38 +124,49 @@ const Home: Component = () => {
               <p class="text-xs sm:text-sm font-semibold">Vintage Jacket</p>
               <p class="text-xs text-gray-600">Rp 125.000</p>
             </div>
-          </div>
+          </A>
 
           {/* Center Product (Main) */}
           <div class="flex-shrink-0 w-48 sm:w-64 md:w-80 relative">
-            <div class="bg-gray-200 aspect-[3/4] rounded-lg overflow-hidden relative">
-              <div class="w-full h-full bg-gray-300 flex items-center justify-center">
-                <span class="text-gray-500">Main Product</span>
+            <A href="/product/5" class="block">
+              <div class="bg-gray-200 aspect-[3/4] rounded-lg overflow-hidden relative group cursor-pointer">
+                <div class="w-full h-full bg-gray-300 flex items-center justify-center group-hover:bg-gray-400 transition-colors">
+                  <span class="text-gray-500">Main Product</span>
+                </div>
+                
+                {/* Quick View Button */}
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Quick view functionality can be added here
+                  }}
+                  class="absolute top-3 sm:top-4 right-3 sm:right-4 bg-white p-1.5 sm:p-2 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center z-10"
+                >
+                  <svg class="w-4 h-4 sm:w-5 sm:h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                  </svg>
+                </button>
               </div>
-              
-              {/* Product Info Overlay */}
-              <div class="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 bg-white p-2 sm:p-3 rounded shadow-lg">
-                <p class="text-xs sm:text-sm font-semibold">Uniqlo pants</p>
-                <p class="text-xs text-gray-600 mb-2">Rp 150.000</p>
+            </A>
+            
+            {/* Product Info Overlay */}
+            <div class="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 bg-white p-2 sm:p-3 rounded shadow-lg z-10">
+              <p class="text-xs sm:text-sm font-semibold">Uniqlo pants</p>
+              <p class="text-xs text-gray-600 mb-2">Rp 150.000</p>
+              <A href="/product/5">
                 <button class="bg-black text-white px-3 sm:px-4 py-1 sm:py-2 rounded text-xs sm:text-sm w-full hover:bg-gray-800 transition-colors">
                   View Product
                 </button>
-              </div>
-              
-              {/* Quick View Button */}
-              <button class="absolute top-3 sm:top-4 right-3 sm:right-4 bg-white p-1.5 sm:p-2 rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center">
-                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                </svg>
-              </button>
+              </A>
             </div>
           </div>
 
           {/* Right Product */}
-          <div class="flex-shrink-0 w-24 sm:w-32 md:w-40">
-            <div class="bg-gray-200 aspect-[3/4] rounded-lg overflow-hidden">
-              <div class="w-full h-full bg-gray-300 flex items-center justify-center">
+          <A href="/product/6" class="flex-shrink-0 w-24 sm:w-32 md:w-40 group cursor-pointer">
+            <div class="bg-gray-200 aspect-[3/4] rounded-lg overflow-hidden group-hover:bg-gray-300 transition-colors">
+              <div class="w-full h-full bg-gray-300 flex items-center justify-center group-hover:bg-gray-400 transition-colors">
                 <span class="text-gray-500 text-xs">Product</span>
               </div>
             </div>
@@ -159,7 +174,7 @@ const Home: Component = () => {
               <p class="text-xs sm:text-sm font-semibold">Retro Sneakers</p>
               <p class="text-xs text-gray-600">Rp 200.000</p>
             </div>
-          </div>
+          </A>
         </div>
 
         {/* Dots Indicator */}

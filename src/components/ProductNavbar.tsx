@@ -2,12 +2,14 @@ import { Component, createSignal } from "solid-js";
 import { A } from "@solidjs/router";
 import AuthModal from "../components/AuthModal";
 
-const Navbar: Component = () => {
+const ProductNavbar: Component = () => {
   const [isMenuOpen, setIsMenuOpen] = createSignal(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = createSignal(false);
   const [authModalTab, setAuthModalTab] = createSignal<"signup" | "signin">("signup");
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen());
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen());
+  };
 
   const openSignUpModal = () => {
     setAuthModalTab("signup");
@@ -34,16 +36,39 @@ const Navbar: Component = () => {
             </A>
           </div>
 
-          {/* Desktop Navigation - Removed, now just showing auth buttons in right side */}
-          
           {/* Desktop Right side buttons */}
-          <div class="hidden md:flex items-center space-x-4 flex-1 justify-end">
-            {/* Search Bar - Made longer */}
-            <div class="relative flex-1 max-w-md">
+          <div class="hidden md:flex items-center space-x-4">
+            {/* Daftar and Masuk buttons */}
+            <div class="flex items-center space-x-2">
+              <span 
+                onClick={openSignUpModal}
+                class="text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition-colors"
+              >
+                Sign Up
+              </span>
+              <span class="text-sm text-gray-400">|</span>
+              <span 
+                onClick={openSignInModal}
+                class="text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition-colors"
+              >
+                Sign In
+              </span>
+            </div>
+
+            {/* Language Selector */}
+            <button class="flex items-center space-x-1 text-sm text-gray-600 hover:text-gray-900 transition-colors">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+            </button>
+
+            {/* Search */}
+            <div class="relative">
               <input 
                 type="text" 
-                placeholder="Search for brands or products"
-                class="w-full bg-gray-100 rounded-full px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+                placeholder="Search"
+                class="bg-gray-100 rounded-full px-4 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 w-48 lg:w-64"
               />
               <svg 
                 class="absolute left-3 top-2.5 h-4 w-4 text-gray-400" 
@@ -60,43 +85,6 @@ const Navbar: Component = () => {
               </svg>
             </div>
 
-            {/* Language Selector */}
-            <button class="flex items-center space-x-1 text-sm text-gray-600 hover:text-gray-900 transition-colors">
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-              </svg>
-            </button>
-
-            {/* Daftar and Masuk buttons - Right next to search */}
-            <div class="flex items-center space-x-2">
-              <span 
-                onClick={openSignUpModal}
-                class="text-sm text-gray-600 hover:text-gray-900 cursor-pointer transition-colors"
-              >
-                Sign Up
-              </span>
-              <span class="text-sm text-gray-400">|</span>
-              <span 
-                onClick={openSignInModal}
-                class="text-sm text-gray-600 hover:text-gray-900 cursor-pointer transition-colors"
-              >
-                Sign In
-              </span>
-            </div>
-
-            {/* Wishlist */}
-            <button class="p-2 text-gray-600 hover:text-gray-900 transition-colors">
-              <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path 
-                  stroke-linecap="round" 
-                  stroke-linejoin="round" 
-                  stroke-width="2" 
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
-              </svg>
-            </button>
-
             {/* Cart */}
             <button class="p-2 text-gray-600 hover:text-gray-900 transition-colors">
               <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,7 +98,7 @@ const Navbar: Component = () => {
             </button>
           </div>
 
-          {/* Mobile menu buttons and search */}
+          {/* Mobile menu buttons */}
           <div class="md:hidden flex items-center space-x-2">
             {/* Mobile Search Icon */}
             <button class="p-2 text-gray-600 hover:text-gray-900 transition-colors">
@@ -163,7 +151,7 @@ const Navbar: Component = () => {
               <div class="relative px-2 pb-3">
                 <input 
                   type="text" 
-                  placeholder="Search for brands or products"
+                  placeholder="Search"
                   class="w-full bg-gray-100 rounded-full px-4 py-3 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
                 />
                 <svg 
@@ -180,19 +168,6 @@ const Navbar: Component = () => {
                   />
                 </svg>
               </div>
-
-              {/* Mobile Wishlist Button */}
-              <button class="flex items-center px-4 py-3 text-base font-medium text-gray-900 hover:bg-gray-50 transition-colors w-full text-left">
-                <svg class="h-5 w-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path 
-                    stroke-linecap="round" 
-                    stroke-linejoin="round" 
-                    stroke-width="2" 
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                  />
-                </svg>
-                Wishlist
-              </button>
 
               {/* Mobile Daftar/Masuk - Enhanced buttons */}
               <div class="border-t border-gray-200 pt-3 mt-3 px-4 space-y-3">
@@ -224,4 +199,4 @@ const Navbar: Component = () => {
   );
 };
 
-export default Navbar;
+export default ProductNavbar;
