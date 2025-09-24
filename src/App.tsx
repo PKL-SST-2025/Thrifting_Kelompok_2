@@ -13,6 +13,7 @@ export default function App() {
         <Route path="/" component={Home} />
         <Route path="/product/:id?" component={ProductView} />
         <Route path="/products" component={AllProducts} />
+        <Route path="/products/category/:slug" component={AllProducts} />
         <Route path="/settings" component={Settings} />
         <Route path="/add-stuff" component={AddStuff} />
         <Route path="/wishlist" component={Wishlist} />

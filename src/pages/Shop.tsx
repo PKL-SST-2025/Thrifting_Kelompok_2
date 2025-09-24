@@ -5,7 +5,7 @@ const Shop = () => {
   const [activeTab, setActiveTab] = createSignal('products');
 
   // Mock data untuk produk yang dijual
-  const [myProducts] = createSignal([
+  const [myProducts, setMyProducts] = createSignal([
     {
       id: 1,
       name: 'Thrifting',
@@ -56,64 +56,90 @@ const Shop = () => {
     }
   ]);
 
+  const handleEdit = (id: number) => {
+    // For demo, append " (Edited)" to description
+    setMyProducts(prev => prev.map(p => p.id === id ? { ...p, description: p.description + ' (Edited)' } : p));
+  };
+
+  const handleDelete = (id: number) => {
+    if (!confirm('Hapus produk ini?')) return;
+    setMyProducts(prev => prev.filter(p => p.id !== id));
+  };
+
   return (
-    <div class="bg-white rounded-lg shadow-sm p-8">
+    <div class="bg-white rounded-2xl shadow-lg p-6 sm:p-8 border border-gray-100">
       {/* Header with Add Stuff Button */}
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-gray-900">Shop</h2>
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+        <div class="flex items-center gap-3">
+          <div class="w-2 h-8 bg-gradient-to-b from-purple-600 to-indigo-600 rounded-full"></div>
+          <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">My Shop</h2>
+        </div>
         <A
           href="/add-stuff"
-          class="bg-red-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-red-600 transition-colors flex items-center"
+          class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center"
         >
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M12 4v16m8-8H4" />
           </svg>
-          Add Stuff
+          Add New Product
         </A>
       </div>
 
       {/* Profile Header */}
-      <div class="bg-gray-200 rounded-lg p-8 mb-6 relative">
-        <div class="flex items-center space-x-6">
+      <div class="bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 rounded-2xl p-6 sm:p-8 mb-8 relative border border-purple-200/50 shadow-lg overflow-hidden">
+        {/* Decorative Elements */}
+        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-200/30 to-indigo-200/30 rounded-full -translate-y-16 translate-x-16"></div>
+        <div class="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-blue-200/40 to-purple-200/40 rounded-full translate-y-12 -translate-x-12"></div>
+        
+        <div class="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-6">
           {/* Profile Image */}
-          <div class="w-24 h-24 bg-gray-400 rounded-full flex items-center justify-center">
-            <span class="text-white text-2xl font-bold">C</span>
+          <div class="relative">
+            <div class="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl ring-4 ring-white/50 backdrop-blur-sm">
+              <span class="text-white text-2xl sm:text-3xl font-bold tracking-wider">C</span>
+            </div>
+            <div class="absolute -bottom-1 -right-1 w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl border-3 border-white shadow-lg flex items-center justify-center">
+              <svg class="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
           </div>
 
           {/* Shop Info */}
-          <div class="flex-1">
-            <h3 class="text-2xl font-bold text-gray-900">Hi, Conrad</h3>
-            <p class="text-gray-600 mt-1">Seller since 2024</p>
-            <div class="flex space-x-6 mt-2">
-              <span class="text-sm text-gray-500">
-                <strong class="text-gray-900">{myProducts().filter(p => p.status === 'active').length}</strong> Active Products
-              </span>
-              <span class="text-sm text-gray-500">
-                <strong class="text-gray-900">{myProducts().filter(p => p.status === 'sold').length}</strong> Sold Items
-              </span>
+          <div class="flex-1 text-center sm:text-left">
+            <h3 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Hi, Conrad</h3>
+            <p class="text-gray-600 font-medium mb-4">Professional Seller since 2024</p>
+            <div class="flex flex-wrap justify-center sm:justify-start gap-4 sm:gap-6">
+              <div class="bg-white/60 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/50">
+                <span class="text-sm text-gray-600 block">Active Products</span>
+                <span class="text-xl font-bold text-gray-900">{myProducts().filter(p => p.status === 'active').length}</span>
+              </div>
+              <div class="bg-white/60 backdrop-blur-sm rounded-xl px-4 py-2 border border-white/50">
+                <span class="text-sm text-gray-600 block">Items Sold</span>
+                <span class="text-xl font-bold text-gray-900">{myProducts().filter(p => p.status === 'sold').length}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div class="flex space-x-8 mb-6">
+      <div class="flex flex-wrap gap-2 sm:gap-4 mb-8">
         <button 
           onClick={() => setActiveTab('products')}
-          class={`text-lg font-medium pb-2 transition-colors ${
+          class={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
             activeTab() === 'products'
-              ? 'text-gray-900 border-b-2 border-red-500'
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg transform scale-105'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800'
           }`}
         >
           My Products ({myProducts().filter(p => p.status === 'active').length})
         </button>
         <button 
           onClick={() => setActiveTab('sold')}
-          class={`text-lg font-medium pb-2 transition-colors ${
+          class={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
             activeTab() === 'sold'
-              ? 'text-gray-900 border-b-2 border-red-500'
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg transform scale-105'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800'
           }`}
         >
           Sold Items ({myProducts().filter(p => p.status === 'sold').length})
@@ -121,35 +147,46 @@ const Shop = () => {
       </div>
 
       {/* Products Grid */}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
         {myProducts()
           .filter(product => activeTab() === 'products' ? product.status === 'active' : product.status === 'sold')
           .map((product) => (
-            <div class="bg-gray-100 rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div class="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100 group">
               {/* Product Image */}
-              <div class="aspect-square bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
-                <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+              <div class="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden flex items-center justify-center">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div class="text-center z-10">
+                  <svg class="w-16 h-16 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span class="text-gray-600 font-medium">{product.name}</span>
+                </div>
+                
+                {product.status === 'sold' && (
+                  <div class="absolute inset-0 bg-black/60 flex items-center justify-center">
+                    <span class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-xl font-bold text-lg shadow-xl">
+                      SOLD OUT
+                    </span>
+                  </div>
+                )}
               </div>
               
               {/* Product Info */}
-              <div class="space-y-2">
-                <h4 class="font-medium text-gray-900">{product.name}</h4>
-                <p class="text-sm text-gray-600">{product.description}</p>
-                <div class="flex items-center justify-between">
-                  <p class="font-semibold text-gray-900">{product.price}</p>
-                  {product.status === 'sold' && (
-                    <span class="text-xs bg-gray-500 text-white px-2 py-1 rounded">
-                      SOLD
-                    </span>
-                  )}
+              <div class="p-6 space-y-3">
+                <div>
+                  <h4 class="font-semibold text-gray-900 text-lg">{product.name}</h4>
+                  <p class="text-gray-600 text-sm leading-relaxed">{product.description}</p>
+                </div>
+                
+                <div class="flex items-center justify-between pt-2">
+                  <p class="font-bold text-gray-900 text-xl">{product.price}</p>
+                  
                   {product.status === 'active' && (
-                    <div class="flex space-x-2">
-                      <button class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">
+                    <div class="flex gap-2">
+                      <button class="bg-blue-100 text-blue-700 px-3 py-2 rounded-lg hover:bg-blue-200 transition-colors font-medium text-sm" onClick={() => handleEdit(product.id)}>
                         Edit
                       </button>
-                      <button class="text-xs bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">
+                      <button class="bg-red-100 text-red-700 px-3 py-2 rounded-lg hover:bg-red-200 transition-colors font-medium text-sm" onClick={() => handleDelete(product.id)}>
                         Delete
                       </button>
                     </div>
@@ -177,7 +214,7 @@ const Shop = () => {
           {activeTab() === 'products' && (
             <A
               href="/add-stuff"
-              class="inline-flex items-center bg-red-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-600 transition-colors"
+              class="inline-flex items-center bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:from-purple-700 hover:to-indigo-700 transition-colors"
             >
               <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width={2} d="M12 4v16m8-8H4" />

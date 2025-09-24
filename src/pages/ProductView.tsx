@@ -59,12 +59,12 @@ const ProductView: Component = () => {
   };
 
   const handleChatSeller = (platform: 'whatsapp' | 'telegram') => {
-    const productInfo = `Halo! Saya tertarik dengan produk:
+  const productInfo = `Halo! Saya tertarik dengan produk:
     
-📦 ${product.name}
-💰 ${product.price}
-📏 Ukuran: ${selectedSize()}
-🔢 Quantity: ${quantity()}
+Nama Produk: ${product.name}
+Harga: ${product.price}
+Ukuran: ${selectedSize()}
+Jumlah: ${quantity()}
 
 Apakah produk ini masih tersedia?`;
 
@@ -82,7 +82,7 @@ Apakah produk ini masih tersedia?`;
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
       <svg 
-        class={`h-4 w-4 ${i < rating ? 'text-yellow-400' : 'text-gray-300'}`} 
+        class={`h-4 w-4 ${i < rating ? 'text-purple-500' : 'text-gray-300'}`} 
         fill="currentColor" 
         viewBox="0 0 20 20"
       >
@@ -95,7 +95,7 @@ Apakah produk ini masih tersedia?`;
     <div class="min-h-screen bg-white">
       <ProductNavbar />
       
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Product Images */}
           <div class="space-y-4">
@@ -252,8 +252,14 @@ Apakah produk ini masih tersedia?`;
                 <h3 class="font-medium text-gray-900 mb-2">Informasi Penjual</h3>
                 <p class="text-sm text-gray-600">{product.seller.name}</p>
                 <div class="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                  <span>📱 {product.seller.whatsapp}</span>
-                  <span>💬 {product.seller.telegram}</span>
+                  <span class="inline-flex items-center gap-1">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.91 15.91 0 006.59 6.59l2.2-2.2a1 1 0 011.02-.24 12.36 12.36 0 003.88.62 1 1 0 011 1V20a2 2 0 01-2 2A18 18 0 013 7a2 2 0 012-2h2.5a1 1 0 011 1 12.36 12.36 0 00.62 3.88 1 1 0 01-.24 1.03l-2.26 2.26z"/></svg>
+                    {product.seller.whatsapp}
+                  </span>
+                  <span class="inline-flex items-center gap-1">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1010 10A10.011 10.011 0 0012 2zm4.94 7.34l-1.51 7.1a1 1 0 01-1.56.62l-2.25-1.66-1.08 1.04a1 1 0 01-1.69-.55l-.56-2.86-2.58-1.06a1 1 0 01.12-1.89l11-3.84a1 1 0 011.41 1.1z"/></svg>
+                    {product.seller.telegram}
+                  </span>
                 </div>
               </div>
             </div>
@@ -318,7 +324,7 @@ Apakah produk ini masih tersedia?`;
                           <span class="text-sm text-gray-600 w-6">{star} star</span>
                           <div class="flex-1 bg-gray-200 rounded-full h-2">
                             <div 
-                              class="bg-yellow-400 h-2 rounded-full" 
+                              class="bg-purple-500 h-2 rounded-full" 
                               style={`width: ${reviews.distribution[star]}%`}
                             ></div>
                           </div>

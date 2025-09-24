@@ -205,10 +205,9 @@ const AuthModal: Component<AuthModalProps> = (props) => {
                       <div class="flex items-start space-x-2 mt-6">
                         <input type="checkbox" class="mt-1" />
                         <p class="text-xs text-gray-600">
-                          Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
-                          Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. 
-                          Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi 
-                          ut aliquip ex ea commodo consequat.
+                          Dengan membuat akun, Anda menyetujui
+                          {' '}<a href="/terms" class="text-purple-600 hover:underline">Syarat & Ketentuan</a>{' '}
+                          dan{' '}<a href="/privacy" class="text-purple-600 hover:underline">Kebijakan Privasi</a> kami.
                         </p>
                       </div>
 
@@ -222,7 +221,7 @@ const AuthModal: Component<AuthModalProps> = (props) => {
 
                       {/* Sign In Link */}
                       <p class="text-center text-sm mt-4">
-                        Already have an account? <button type="button" onClick={() => switchTab("signin")} class="text-red-600 hover:underline">Login</button>
+                        Already have an account? <button type="button" onClick={() => switchTab("signin")} class="text-purple-600 hover:underline">Login</button>
                       </p>
                     </form>
                   );
@@ -253,9 +252,14 @@ const AuthModal: Component<AuthModalProps> = (props) => {
                         Get In
                       </button>
 
+                      {/* Policy Note */}
+                      <p class="text-center text-xs text-gray-500 mt-3">
+                        Dengan masuk, Anda menyetujui <a href="/terms" class="text-purple-600 hover:underline">Syarat & Ketentuan</a> dan <a href="/privacy" class="text-purple-600 hover:underline">Kebijakan Privasi</a>.
+                      </p>
+
                       {/* Sign Up Link */}
                       <p class="text-center text-sm mt-6">
-                        Don't have account? <button type="button" onClick={() => switchTab("signup")} class="text-red-600 hover:underline">Regist</button>
+                        Don't have account? <button type="button" onClick={() => switchTab("signup")} class="text-purple-600 hover:underline">Regist</button>
                       </p>
                     </form>
                   );
