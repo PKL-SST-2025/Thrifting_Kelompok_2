@@ -1,14 +1,36 @@
-import { Component, createSignal } from "solid-js";
+import { Component, createSignal, onMount } from "solid-js";
+import { useParams } from "@solidjs/router";
 import ProductNavbar from "../components/ProductNavbar";
+import { getProduct, addToWishlist, removeFromWishlist, isAuthenticated, type Product } from "../lib/api";
 
 const ProductView: Component = () => {
+  const params = useParams();
   const [selectedImage, setSelectedImage] = createSignal(0);
   const [selectedSize, setSelectedSize] = createSignal("all size");
   const [quantity, setQuantity] = createSignal(1);
   const [activeTab, setActiveTab] = createSignal("description"); // Add tab state
+  
+  // API product data
+  const [product, setProduct] = createSignal<Product | null>(null);
+  const [loading, setLoading] = createSignal(true);
+  const [isLiked, setIsLiked] = createSignal(false);
 
-  // Mock product data - in a real app this would come from props or API
-  const product = {
+  // Load product on mount
+  onMount(async () => {
+    if (params.id) {
+      try {
+        const fetchedProduct = await getProduct(parseInt(params.id));
+        setProduct(fetchedProduct);
+      } catch (err) {
+        console.error("Failed to load product:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+  });
+
+  // Mock product data fallback - in a real app this would come from props or API
+  const fallbackProduct = {
     brand: "THRIFTING",
     name: "Sweater Nike - White",
     price: "Rp. 190.000,00",
@@ -59,10 +81,11 @@ const ProductView: Component = () => {
   };
 
   const handleChatSeller = (platform: 'whatsapp' | 'telegram') => {
-  const productInfo = `Halo! Saya tertarik dengan produk:
+    const currentProduct = product() || fallbackProduct;
+    const productInfo = `Halo! Saya tertarik dengan produk:
     
-Nama Produk: ${product.name}
-Harga: ${product.price}
+Nama Produk: ${currentProduct.name}
+Harga: ${typeof currentProduct.price === 'number' ? formatPrice(currentProduct.price) : currentProduct.price}
 Ukuran: ${selectedSize()}
 Jumlah: ${quantity()}
 
@@ -70,12 +93,44 @@ Apakah produk ini masih tersedia?`;
 
     if (platform === 'whatsapp') {
       const encodedMessage = encodeURIComponent(productInfo);
-      const whatsappUrl = `https://wa.me/${product.seller.whatsapp.replace(/[^0-9]/g, '')}?text=${encodedMessage}`;
+      const whatsappUrl = `https://wa.me/${(currentProduct as any).seller?.whatsapp?.replace(/[^0-9]/g, '') || '6282138448982'}?text=${encodedMessage}`;
       window.open(whatsappUrl, '_blank');
     } else if (platform === 'telegram') {
       const encodedMessage = encodeURIComponent(productInfo);
-      const telegramUrl = `https://t.me/${product.seller.telegram.replace('@', '')}?text=${encodedMessage}`;
+      const telegramUrl = `https://t.me/${(currentProduct as any).seller?.telegram?.replace('@', '') || 'deettoll'}?text=${encodedMessage}`;
       window.open(telegramUrl, '_blank');
+    }
+  };
+
+  // Price formatter
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR'
+    }).format(price);
+  };
+
+  // Wishlist functionality
+  const handleToggleWishlist = async () => {
+    if (!isAuthenticated()) {
+      alert("Please login to add items to wishlist");
+      return;
+    }
+
+    const productId = product()?.id;
+    if (!productId) return;
+
+    try {
+      if (isLiked()) {
+        await removeFromWishlist(productId);
+        setIsLiked(false);
+      } else {
+        await addToWishlist(productId);
+        setIsLiked(true);
+      }
+    } catch (err) {
+      console.error("Failed to toggle wishlist:", err);
+      alert("Failed to update wishlist. Please try again.");
     }
   };
 
@@ -91,6 +146,20 @@ Apakah produk ini masih tersedia?`;
     ));
   };
 
+  // Helper to get current product data
+  const currentProduct = () => product() || fallbackProduct;
+
+  if (loading()) {
+    return (
+      <div class="min-h-screen bg-white">
+        <ProductNavbar />
+        <div class="flex justify-center items-center py-20">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div class="min-h-screen bg-white">
       <ProductNavbar />
@@ -102,7 +171,7 @@ Apakah produk ini masih tersedia?`;
             {/* Main Image */}
             <div class="aspect-square bg-gray-200 rounded-lg overflow-hidden">
               <img 
-                src={product.images[selectedImage()]} 
+                src={(currentProduct() as any).images?.[selectedImage()] || "/api/placeholder/400/500"} 
                 alt={product.name}
                 class="w-full h-full object-cover"
               />
@@ -110,7 +179,7 @@ Apakah produk ini masih tersedia?`;
             
             {/* Thumbnail Images */}
             <div class="grid grid-cols-4 gap-2">
-              {product.images.map((image, index) => (
+              {((currentProduct() as any).images || ["/api/placeholder/400/500"]).map((image, index) => (
                 <button
                   onClick={() => setSelectedImage(index)}
                   class={`aspect-square bg-gray-200 rounded-lg overflow-hidden border-2 transition-colors ${
@@ -131,27 +200,27 @@ Apakah produk ini masih tersedia?`;
           <div class="space-y-6">
             {/* Brand and Title */}
             <div>
-              <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">{product.brand}</p>
-              <h1 class="text-2xl font-bold text-gray-900 mt-1">{product.name}</h1>
+              <p class="text-sm font-medium text-gray-600 uppercase tracking-wide">{(currentProduct() as any).brand || 'THRIFTING'}</p>
+              <h1 class="text-2xl font-bold text-gray-900 mt-1">{currentProduct().name}</h1>
             </div>
 
             {/* Rating */}
             <div class="flex items-center space-x-2">
               <div class="flex items-center">
-                {renderStars(product.rating)}
+                {renderStars((currentProduct() as any).rating || 5)}
               </div>
-              <span class="text-sm text-gray-600">({product.rating})</span>
+              <span class="text-sm text-gray-600">({(currentProduct() as any).rating || 5})</span>
             </div>
 
             {/* Price */}
             <div>
-              <p class="text-3xl font-bold text-gray-900">{product.price}</p>
+              <p class="text-3xl font-bold text-gray-900">{typeof currentProduct().price === 'number' ? formatPrice(currentProduct().price as number) : currentProduct().price}</p>
             </div>
 
             {/* Color Selection */}
             <div>
               <label class="block text-sm font-medium text-gray-900 mb-3">
-                Colour: <span class="font-normal">{product.colors[0]}</span>
+                Colour: <span class="font-normal">{(currentProduct() as any).colors?.[0] || 'Default'}</span>
               </label>
               <div class="flex space-x-2">
                 <button class="w-8 h-8 bg-white border-2 border-gray-900 rounded-full"></button>
@@ -170,7 +239,7 @@ Apakah produk ini masih tersedia?`;
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
                 <option value="all size">all size</option>
-                {product.sizes.map(size => (
+                {((currentProduct() as any).sizes || ["S", "M", "L", "XL"]).map(size => (
                   <option value={size}>{size}</option>
                 ))}
               </select>
@@ -223,6 +292,24 @@ Apakah produk ini masih tersedia?`;
               
               {/* Secondary Actions */}
               <div class="flex space-x-4">
+                <button 
+                  onClick={handleToggleWishlist}
+                  class={`flex-1 p-3 border rounded-md transition-colors flex items-center justify-center space-x-2 ${
+                    isLiked() 
+                      ? 'bg-red-50 border-red-300 text-red-700 hover:bg-red-100' 
+                      : 'border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <svg class={`h-5 w-5 ${isLiked() ? 'fill-current text-red-600' : ''}`} fill={isLiked() ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                    <path 
+                      stroke-linecap="round" 
+                      stroke-linejoin="round" 
+                      stroke-width="2" 
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                    />
+                  </svg>
+                  <span>{isLiked() ? 'Remove from Wishlist' : 'Add to Wishlist'}</span>
+                </button>
                 <button class="flex-1 p-3 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center justify-center space-x-2">
                   <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path 
@@ -250,15 +337,15 @@ Apakah produk ini masih tersedia?`;
               {/* Seller Info */}
               <div class="bg-gray-50 p-4 rounded-lg">
                 <h3 class="font-medium text-gray-900 mb-2">Informasi Penjual</h3>
-                <p class="text-sm text-gray-600">{product.seller.name}</p>
+                <p class="text-sm text-gray-600">{(currentProduct() as any).seller?.name || "Toko Thrift Jakarta"}</p>
                 <div class="flex items-center space-x-4 mt-2 text-xs text-gray-500">
                   <span class="inline-flex items-center gap-1">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79a15.91 15.91 0 006.59 6.59l2.2-2.2a1 1 0 011.02-.24 12.36 12.36 0 003.88.62 1 1 0 011 1V20a2 2 0 01-2 2A18 18 0 013 7a2 2 0 012-2h2.5a1 1 0 011 1 12.36 12.36 0 00.62 3.88 1 1 0 01-.24 1.03l-2.26 2.26z"/></svg>
-                    {product.seller.whatsapp}
+                    {(currentProduct() as any).seller?.whatsapp || "+6282138448982"}
                   </span>
                   <span class="inline-flex items-center gap-1">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1010 10A10.011 10.011 0 0012 2zm4.94 7.34l-1.51 7.1a1 1 0 01-1.56.62l-2.25-1.66-1.08 1.04a1 1 0 01-1.69-.55l-.56-2.86-2.58-1.06a1 1 0 01.12-1.89l11-3.84a1 1 0 011.41 1.1z"/></svg>
-                    {product.seller.telegram}
+                    {(currentProduct() as any).seller?.telegram || "@deettoll"}
                   </span>
                 </div>
               </div>
@@ -296,9 +383,9 @@ Apakah produk ini masih tersedia?`;
           <div class="py-8">
             {activeTab() === "description" ? (
               <div class="max-w-3xl">
-                <p class="text-gray-700 mb-4">{product.description}</p>
+                <p class="text-gray-700 mb-4">{currentProduct().description}</p>
                 <ul class="list-disc list-inside text-gray-700">
-                  {product.features.map(feature => (
+                  {((currentProduct() as any).features || []).map(feature => (
                     <li>{feature}</li>
                   ))}
                 </ul>

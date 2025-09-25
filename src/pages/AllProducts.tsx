@@ -1,7 +1,8 @@
-import { Component, createEffect, createSignal } from "solid-js";
+import { Component, createEffect, createSignal, onMount } from "solid-js";
 import { A, useParams, useNavigate } from "@solidjs/router";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { getProducts, addToWishlist, removeFromWishlist, isAuthenticated, type Product } from "../lib/api";
 
 const AllProducts: Component = () => {
   // Router params
@@ -46,18 +47,46 @@ const AllProducts: Component = () => {
     { name: "Gray", code: "#6b7280", ring: "ring-white/40" },
   ];
 
-  // Sample product data with richer attributes
-  const products = [
+  // Products from API
+  const [products, setProducts] = createSignal<Product[]>([]);
+  const [loading, setLoading] = createSignal(true);
+
+  // Load products on mount
+  onMount(async () => {
+    try {
+      const fetchedProducts = await getProducts();
+      setProducts(fetchedProducts);
+
+      // Load wishlist if authenticated
+      if (isAuthenticated()) {
+        try {
+          const { getWishlist } = await import('../lib/api');
+          const wishlistItems = await getWishlist();
+          const likedIds = new Set(wishlistItems.map(item => item.id));
+          setLikedProducts(likedIds);
+        } catch (err) {
+          console.error("Failed to load wishlist:", err);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load products:", err);
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  // Sample fallback data (keeping some for demo)
+  const sampleProducts = [
     {
       id: 1,
       name: "Zip-Up Short Jacket",
-      brand: "Thrifting",
+      description: "Stylish vintage jacket",
       price: 69900,
       category: "Outerwear",
-      gender: "Wanita",
-      colors: ["Beige", "Black", "White"],
-      sizes: ["XS", "S", "M", "L"],
-      inStockOnline: true,
+      condition: "Excellent",
+      seller_id: "1",
+      images: [],
+      created_at: "2024-01-01",
     },
     {
       id: 2,
@@ -184,20 +213,37 @@ const AllProducts: Component = () => {
 
   const [likedProducts, setLikedProducts] = createSignal<Set<number>>(new Set());
 
-  const toggleLike = (productId: number) => {
-    const newLiked = new Set(likedProducts());
-    if (newLiked.has(productId)) newLiked.delete(productId); else newLiked.add(productId);
-    setLikedProducts(newLiked);
+  const toggleLike = async (productId: number) => {
+    if (!isAuthenticated()) {
+      // Show login modal if not authenticated
+      // For now, just show alert
+      alert("Please login to add items to wishlist");
+      return;
+    }
+
+    try {
+      if (likedProducts().has(productId)) {
+        await removeFromWishlist(productId);
+        setLikedProducts(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(productId);
+          return newSet;
+        });
+      } else {
+        await addToWishlist(productId);
+        setLikedProducts(prev => new Set(prev).add(productId));
+      }
+    } catch (err) {
+      console.error("Failed to toggle wishlist:", err);
+      alert("Failed to update wishlist. Please try again.");
+    }
   };
 
   // Filtering and sorting helpers
   const filteredProducts = () => {
-    let list = products.filter((p) =>
-      (selectedCategory() === "Semua" || p.category === selectedCategory()) &&
-      (selectedGender() === "Semua" || p.gender === selectedGender()) &&
-      (selectedSize() === "Semua" || p.sizes.includes(selectedSize())) &&
-      (selectedColor() === "Semua" || p.colors.includes(selectedColor())) &&
-      (availability() === "Semua" || (availability() === "Online Saja" ? p.inStockOnline : true))
+    const allProducts = products().length > 0 ? products() : sampleProducts;
+    let list = allProducts.filter((p) =>
+      (selectedCategory() === "Semua" || p.category === selectedCategory())
     );
 
     list = list.sort((a, b) => {
@@ -259,6 +305,12 @@ const AllProducts: Component = () => {
       <Navbar />
       
       {/* No hero. Directly into content */}
+
+      {loading() && (
+        <div class="flex justify-center items-center py-20">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        </div>
+      )}
 
       {/* Products Section */}
       <section class="py-12 sm:py-16 lg:py-20">
@@ -391,7 +443,7 @@ const AllProducts: Component = () => {
 
                     {/* Swatches */}
                     <div class="flex items-center gap-2 px-3 pt-3">
-                      {product.colors.slice(0, 5).map((c) => {
+                      {(product as any).colors ? (product as any).colors.slice(0, 5).map((c) => {
                         const meta = colors.find((x) => x.name === c);
                         return (
                           <span
@@ -400,17 +452,17 @@ const AllProducts: Component = () => {
                             style={{ background: meta?.code || '#ccc' }}
                           />
                         );
-                      })}
-                      {product.colors.length > 5 && (
-                        <span class="text-xs text-gray-500">+{product.colors.length - 5}</span>
+                      }) : null}
+                      {(product as any).colors && (product as any).colors.length > 5 && (
+                        <span class="text-xs text-gray-500">+{(product as any).colors.length - 5}</span>
                       )}
                     </div>
 
                     {/* Info */}
                     <div class="p-3">
-                      <p class="text-[11px] text-gray-500 uppercase tracking-wide">{product.gender}</p>
+                      <p class="text-[11px] text-gray-500 uppercase tracking-wide">{(product as any).gender || product.category}</p>
                       <h3 class="text-sm text-gray-900 leading-snug line-clamp-2">{product.name}</h3>
-                      <div class="mt-1 text-gray-700 text-sm">{sizes.filter(s => s !== 'All' && product.sizes.includes(s)).join(' · ')}</div>
+                      <div class="mt-1 text-gray-700 text-sm">{(product as any).sizes ? sizes.filter(s => s !== 'All' && (product as any).sizes.includes(s)).join(' · ') : 'Berbagai Ukuran'}</div>
                       <div class="mt-2 font-semibold text-gray-900">{formatPrice(product.price)}</div>
                     </div>
                   </div>

@@ -1,11 +1,44 @@
-import { Component } from "solid-js";
+import { Component, createSignal, onMount } from "solid-js";
 import { A } from "@solidjs/router";
+import { getProducts, type Product } from "../lib/api";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import slideshow from "../assets/abbey road (1969).jpg"
 import imgver from "../assets/1000021576.jpg"
 
 const Home: Component = () => {
+  const [featuredProducts, setFeaturedProducts] = createSignal<Product[]>([]);
+  const [loading, setLoading] = createSignal(true);
+
+  // Load featured products on mount
+  onMount(async () => {
+    try {
+      const products = await getProducts();
+      // Take first 3 products as featured
+      setFeaturedProducts(products.slice(0, 3));
+    } catch (err) {
+      console.error("Failed to load products:", err);
+      // Keep fallback products if API fails
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  // Format price for display
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR'
+    }).format(price);
+  };
+
+  // Fallback products for when API is not available
+  const fallbackProducts = [
+    { name: "Vintage Jacket", price: "Rp 95.000", category: "Vintage", id: 1 },
+    { name: "Retro Sneakers", price: "Rp 85.000", category: "Vintage", id: 2 },  
+    { name: "Thrift Bag", price: "Rp 95.000", category: "Vintage", id: 3 }
+  ];
+
   return (
     <div class="min-h-screen bg-white">
       <Navbar />
@@ -93,12 +126,13 @@ const Home: Component = () => {
           
           {/* Product Cards */}
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-12">
-          {[
-            { name: "Vintage Jacket", price: "Rp 95.000", category: "Vintage" },
-            { name: "Retro Sneakers", price: "Rp 85.000", category: "Vintage" },  
-            { name: "Thrift Bag", price: "Rp 95.000", category: "Vintage" }
-          ].map((product, index) => (
-            <A href={`/product/${index + 1}`} class="group">
+          {(featuredProducts().length > 0 ? featuredProducts().map((product, index) => ({
+            name: product.name,
+            price: formatPrice(product.price),
+            category: product.category,
+            id: product.id
+          })) : fallbackProducts).map((product, index) => (
+            <A href={`/product/${product.id}`} class="group">
               <div class="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2">
                 {/* Product Image */}
                 <div class="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">

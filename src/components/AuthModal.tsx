@@ -1,14 +1,35 @@
-import { Component, createSignal, createEffect, onMount } from "solid-js";
+import { Component, createSignal, onMount, createEffect } from "solid-js";
+import { register, login, type RegisterPayload, type LoginPayload } from "../lib/api";
 
 interface AuthModalProps {
   isOpen: boolean;
-  initialTab: "signup" | "signin";
   onClose: () => void;
+  initialTab: "signup" | "signin";
 }
 
 const AuthModal: Component<AuthModalProps> = (props) => {
   const [activeTab, setActiveTab] = createSignal(props.initialTab);
   const [isVisible, setIsVisible] = createSignal(false);
+  const [loading, setLoading] = createSignal(false);
+  const [error, setError] = createSignal<string | null>(null);
+  
+  // Form data
+  const [signupData, setSignupData] = createSignal<RegisterPayload>({
+    username: "",
+    email: "",
+    password: ""
+  });
+
+  // Additional signup fields
+  const [lastName, setLastName] = createSignal("");
+  const [phoneNumber, setPhoneNumber] = createSignal("");
+  const [birthDate, setBirthDate] = createSignal({ day: "", month: "", year: "" });
+  const [agreeToPolicy, setAgreeToPolicy] = createSignal(false);
+  
+  const [signinData, setSigninData] = createSignal<LoginPayload>({
+    email: "",
+    password: ""
+  });
 
   // Handle modal entrance animation
   onMount(() => {
@@ -38,6 +59,101 @@ const AuthModal: Component<AuthModalProps> = (props) => {
 
   const switchTab = (tab: "signup" | "signin") => {
     setActiveTab(tab);
+    setError(null);
+  };
+
+  // Form validation
+  const isSignupValid = () => {
+    const data = signupData();
+    return data.username.trim().length >= 3 &&
+           data.email.trim().includes('@') &&
+           data.password.length >= 6 &&
+           lastName().trim().length >= 1 &&
+           phoneNumber().trim().length >= 8 &&
+           birthDate().day && birthDate().month && birthDate().year &&
+           agreeToPolicy();
+  };
+
+  const isSigninValid = () => {
+    const data = signinData();
+    return data.email.trim().includes('@') &&
+           data.password.length >= 1;
+  };
+
+  const handleSignup = async (e: Event) => {
+    e.preventDefault();
+    if (!isSignupValid()) {
+      setError("Mohon lengkapi semua field dengan benar");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    
+    try {
+      await register(signupData());
+      // Auto login after successful registration
+      const response = await login({ email: signupData().email, password: signupData().password });
+      console.log('✅ Signup + Login response received:', response);
+      
+      // Verify that data is actually saved
+      const savedToken = localStorage.getItem("authToken");
+      const savedUser = localStorage.getItem("user");
+      console.log('✅ Verification - Token saved:', !!savedToken, 'User saved:', !!savedUser);
+      
+      handleClose();
+      
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new CustomEvent('authStateChanged'));
+      
+      // Force page reload after a longer delay to ensure everything is saved
+      setTimeout(() => {
+        window.location.href = window.location.href;
+      }, 300);
+    } catch (err: any) {
+      if (err.message.includes("email already used")) {
+        setError("Email sudah terdaftar. Silakan gunakan email lain atau login.");
+      } else {
+        setError(err.message || "Registrasi gagal");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignin = async (e: Event) => {
+    e.preventDefault();
+    if (!isSigninValid()) {
+      setError("Mohon masukkan email dan password");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await login(signinData());
+      console.log('✅ Login response received:', response);
+      
+      // Verify that data is actually saved
+      const savedToken = localStorage.getItem("authToken");
+      const savedUser = localStorage.getItem("user");
+      console.log('✅ Verification - Token saved:', !!savedToken, 'User saved:', !!savedUser);
+      
+      handleClose();
+      
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new CustomEvent('authStateChanged'));
+      
+      // Force page reload after a longer delay to ensure everything is saved
+      setTimeout(() => {
+        window.location.href = window.location.href;
+      }, 300);
+    } catch (err: any) {
+      setError(err.message || "Login gagal");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -70,201 +186,240 @@ const AuthModal: Component<AuthModalProps> = (props) => {
 
             {/* Content Container */}
             <div class="p-6 h-full overflow-y-auto">
-              {/* Header - Different for each tab */}
+              {/* Header */}
               <div class="mb-8">
                 {activeTab() === "signup" ? (
-                  <>
-                    <h2 class="text-3xl font-bold mb-2">Create Account</h2>
-                  </>
+                  <h2 class="text-3xl font-bold mb-2">Daftar Akun</h2>
                 ) : (
-                  <h2 class="text-3xl font-bold mb-8">Sign In</h2>
+                  <h2 class="text-3xl font-bold mb-8">Masuk</h2>
                 )}
               </div>
 
-              {/* Tabs */}
+              {/* Tab Navigation */}
               <div class="flex border-b mb-6">
                 <button 
                   onClick={() => switchTab("signup")}
-                  class={`flex-1 pb-3 text-center font-medium transition-colors duration-200 ${
-                    activeTab() === "signup" 
-                      ? "border-b-2 border-black text-black" 
-                      : "text-gray-500 hover:text-gray-700"
+                  class={`flex-1 pb-3 text-center font-medium transition-colors ${
+                    activeTab() === "signup" ? 'border-b-2 border-black text-black' : 'text-gray-500'
                   }`}
                 >
-                  Sign Up
+                  Daftar
                 </button>
                 <button 
                   onClick={() => switchTab("signin")}
-                  class={`flex-1 pb-3 text-center font-medium transition-colors duration-200 ${
-                    activeTab() === "signin" 
-                      ? "border-b-2 border-black text-black" 
-                      : "text-gray-500 hover:text-gray-700"
+                  class={`flex-1 pb-3 text-center font-medium transition-colors ${
+                    activeTab() === "signin" ? 'border-b-2 border-black text-black' : 'text-gray-500'
                   }`}
                 >
-                  Sign In
+                  Masuk
                 </button>
               </div>
 
-              {/* Form Content - Using function call for better reactivity */}
-              {(() => {
-                if (activeTab() === "signup") {
-                  return (
-                    <form class="space-y-4">
-                      <div>
-                        <input 
-                          type="email" 
-                          placeholder="Email"
-                          class="w-full pb-2 border-b border-gray-300 focus:border-black focus:outline-none transition-colors"
-                        />
-                      </div>
-                      
-                      <div>
-                        <input 
-                          type="text" 
-                          placeholder="Nama Depan"
-                          class="w-full pb-2 border-b border-gray-300 focus:border-black focus:outline-none transition-colors"
-                        />
-                      </div>
-                      
-                      <div>
-                        <input 
-                          type="text" 
-                          placeholder="Nama Belakang"
-                          class="w-full pb-2 border-b border-gray-300 focus:border-black focus:outline-none transition-colors"
-                        />
-                      </div>
+              {/* Error Display */}
+              {error() && (
+                <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p class="text-red-600 text-sm">{error()}</p>
+                </div>
+              )}
 
-                      {/* Phone Number */}
-                      <div class="flex space-x-2">
-                        <select class="pb-2 border-b border-gray-300 focus:border-black focus:outline-none">
-                          <option value="+62">+62</option>
-                        </select>
-                        <input 
-                          type="tel" 
-                          placeholder="Phone Number"
-                          class="flex-1 pb-2 border-b border-gray-300 focus:border-black focus:outline-none transition-colors"
-                        />
-                      </div>
+              {/* Forms */}
+              {activeTab() === "signup" ? (
+                <form onSubmit={handleSignup} class="space-y-4">
+                  <div>
+                    <input 
+                      type="email" 
+                      placeholder="Email"
+                      required
+                      value={signupData().email}
+                      onInput={(e) => setSignupData({...signupData(), email: e.currentTarget.value})}
+                      class="w-full pb-2 border-b border-gray-300 focus:border-black focus:outline-none transition-colors"
+                    />
+                  </div>
 
-                      {/* Date of Birth */}
-                      <div>
-                        <p class="text-sm text-gray-600 mb-2">Date of Birth</p>
-                        <div class="flex space-x-2">
-                          <select class="flex-1 pb-2 border-b border-gray-300 focus:border-black focus:outline-none">
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                          </select>
-                          <select class="flex-1 pb-2 border-b border-gray-300 focus:border-black focus:outline-none">
-                            <option value="Jan">Jan</option>
-                            <option value="Feb">Feb</option>
-                          </select>
-                          <select class="flex-1 pb-2 border-b border-gray-300 focus:border-black focus:outline-none">
-                            <option value="2000">2000</option>
-                            <option value="1999">1999</option>
-                          </select>
-                        </div>
-                      </div>
+                  <div>
+                    <input 
+                      type="text" 
+                      placeholder="Username (minimal 3 karakter)"
+                      required
+                      minlength="3"
+                      value={signupData().username}
+                      onInput={(e) => setSignupData({...signupData(), username: e.currentTarget.value})}
+                      class="w-full pb-2 border-b border-gray-300 focus:border-black focus:outline-none transition-colors"
+                    />
+                    {signupData().username && signupData().username.length < 3 && (
+                      <p class="text-red-500 text-xs mt-1">Username minimal 3 karakter</p>
+                    )}
+                  </div>
 
-                      <div>
-                        <input 
-                          type="text" 
-                          placeholder="Kode Pos"
-                          class="w-full pb-2 border-b border-gray-300 focus:border-black focus:outline-none transition-colors"
-                        />
-                      </div>
+                  <div>
+                    <input 
+                      type="text" 
+                      placeholder="Nama Belakang"
+                      required
+                      value={lastName()}
+                      onInput={(e) => setLastName(e.currentTarget.value)}
+                      class="w-full pb-2 border-b border-gray-300 focus:border-black focus:outline-none transition-colors"
+                    />
+                  </div>
 
-                      <div>
-                        <input 
-                          type="password" 
-                          placeholder="Password"
-                          class="w-full pb-2 border-b border-gray-300 focus:border-black focus:outline-none transition-colors"
-                        />
-                      </div>
+                  {/* Phone Number */}
+                  <div class="flex space-x-2">
+                    <select class="pb-2 border-b border-gray-300 focus:border-black focus:outline-none">
+                      <option value="+62">+62</option>
+                    </select>
+                    <input 
+                      type="tel" 
+                      placeholder="Phone Number (minimal 8 digit)"
+                      required
+                      minlength="8"
+                      value={phoneNumber()}
+                      onInput={(e) => setPhoneNumber(e.currentTarget.value)}
+                      class="flex-1 pb-2 border-b border-gray-300 focus:border-black focus:outline-none transition-colors"
+                    />
+                  </div>
 
-                      {/* Password Requirements */}
-                      <div class="text-xs text-gray-500 space-y-1">
-                        <div class="flex items-center space-x-2">
-                          <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
-                          <span>8 hingga 25 karakter</span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                          <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
-                          <span>1 Angka</span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                          <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
-                          <span>1 Huruf Kapital</span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                          <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
-                          <span>1 Huruf Kecil</span>
-                        </div>
-                      </div>
-
-                      {/* Terms Checkbox */}
-                      <div class="flex items-start space-x-2 mt-6">
-                        <input type="checkbox" class="mt-1" />
-                        <p class="text-xs text-gray-600">
-                          Dengan membuat akun, Anda menyetujui
-                          {' '}<a href="/terms" class="text-purple-600 hover:underline">Syarat & Ketentuan</a>{' '}
-                          dan{' '}<a href="/privacy" class="text-purple-600 hover:underline">Kebijakan Privasi</a> kami.
-                        </p>
-                      </div>
-
-                      {/* Submit Button */}
-                      <button 
-                        type="submit"
-                        class="w-full bg-gray-900 text-white py-3 rounded-md hover:bg-gray-800 transition-colors font-medium mt-6"
+                  {/* Date of Birth */}
+                  <div>
+                    <p class="text-sm text-gray-600 mb-2">Date of Birth</p>
+                    <div class="flex space-x-2">
+                      <select 
+                        required
+                        value={birthDate().day}
+                        onChange={(e) => setBirthDate({...birthDate(), day: e.currentTarget.value})}
+                        class="flex-1 pb-2 border-b border-gray-300 focus:border-black focus:outline-none"
                       >
-                        Accept & Create Account
-                      </button>
-
-                      {/* Sign In Link */}
-                      <p class="text-center text-sm mt-4">
-                        Already have an account? <button type="button" onClick={() => switchTab("signin")} class="text-purple-600 hover:underline">Login</button>
-                      </p>
-                    </form>
-                  );
-                } else {
-                  return (
-                    <form class="space-y-6">
-                      <div>
-                        <input 
-                          type="email" 
-                          placeholder="Email"
-                          class="w-full pb-2 border-b border-gray-300 focus:border-black focus:outline-none transition-colors"
-                        />
-                      </div>
-                      
-                      <div>
-                        <input 
-                          type="password" 
-                          placeholder="Password"
-                          class="w-full pb-2 border-b border-gray-300 focus:border-black focus:outline-none transition-colors"
-                        />
-                      </div>
-
-                      {/* Submit Button */}
-                      <button 
-                        type="submit"
-                        class="w-full bg-gray-900 text-white py-3 rounded-md hover:bg-gray-800 transition-colors font-medium mt-8"
+                        <option value="">Day</option>
+                        {Array.from({length: 31}, (_, i) => i + 1).map(day => (
+                          <option value={day.toString()}>{day}</option>
+                        ))}
+                      </select>
+                      <select 
+                        required
+                        value={birthDate().month}
+                        onChange={(e) => setBirthDate({...birthDate(), month: e.currentTarget.value})}
+                        class="flex-1 pb-2 border-b border-gray-300 focus:border-black focus:outline-none"
                       >
-                        Get In
-                      </button>
+                        <option value="">Month</option>
+                        <option value="1">Jan</option>
+                        <option value="2">Feb</option>
+                        <option value="3">Mar</option>
+                        <option value="4">Apr</option>
+                        <option value="5">May</option>
+                        <option value="6">Jun</option>
+                        <option value="7">Jul</option>
+                        <option value="8">Aug</option>
+                        <option value="9">Sep</option>
+                        <option value="10">Oct</option>
+                        <option value="11">Nov</option>
+                        <option value="12">Dec</option>
+                      </select>
+                      <select 
+                        required
+                        value={birthDate().year}
+                        onChange={(e) => setBirthDate({...birthDate(), year: e.currentTarget.value})}
+                        class="flex-1 pb-2 border-b border-gray-300 focus:border-black focus:outline-none"
+                      >
+                        <option value="">Year</option>
+                        {Array.from({length: 80}, (_, i) => 2024 - i).map(year => (
+                          <option value={year.toString()}>{year}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
 
-                      {/* Policy Note */}
-                      <p class="text-center text-xs text-gray-500 mt-3">
-                        Dengan masuk, Anda menyetujui <a href="/terms" class="text-purple-600 hover:underline">Syarat & Ketentuan</a> dan <a href="/privacy" class="text-purple-600 hover:underline">Kebijakan Privasi</a>.
-                      </p>
+                  <div>
+                    <input 
+                      type="password" 
+                      placeholder="Password (minimal 6 karakter)"
+                      required
+                      minlength="6"
+                      value={signupData().password}
+                      onInput={(e) => setSignupData({...signupData(), password: e.currentTarget.value})}
+                      class="w-full pb-2 border-b border-gray-300 focus:border-black focus:outline-none transition-colors"
+                    />
+                    {signupData().password && signupData().password.length < 6 && (
+                      <p class="text-red-500 text-xs mt-1">Password minimal 6 karakter</p>
+                    )}
+                  </div>
 
-                      {/* Sign Up Link */}
-                      <p class="text-center text-sm mt-6">
-                        Don't have account? <button type="button" onClick={() => switchTab("signup")} class="text-purple-600 hover:underline">Regist</button>
-                      </p>
-                    </form>
-                  );
-                }
-              })()}
+                  {/* Policy Agreement */}
+                  <div class="flex items-start space-x-3 mt-6">
+                    <input 
+                      type="checkbox" 
+                      id="agree-policy"
+                      required
+                      checked={agreeToPolicy()}
+                      onChange={(e) => setAgreeToPolicy(e.currentTarget.checked)}
+                      class="mt-1 rounded border-gray-300 text-black focus:ring-black focus:ring-offset-0"
+                    />
+                    <label for="agree-policy" class="text-sm text-gray-600 leading-relaxed">
+                      Saya setuju dengan{" "}
+                      <a href="#" class="text-black underline hover:no-underline">
+                        Syarat dan Ketentuan
+                      </a>{" "}
+                      serta{" "}
+                      <a href="#" class="text-black underline hover:no-underline">
+                        Kebijakan Privasi
+                      </a>{" "}
+                      yang berlaku.
+                    </label>
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    disabled={loading() || !isSignupValid()}
+                    class={`w-full py-3 rounded-md font-medium transition-colors mt-6 ${
+                      loading() || !isSignupValid()
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-black text-white hover:bg-gray-800'
+                    }`}
+                  >
+                    {loading() ? 'Mendaftar...' : 'Daftar'}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleSignin} class="space-y-6">
+                  <div>
+                    <input 
+                      type="email" 
+                      placeholder="Email"
+                      required
+                      value={signinData().email}
+                      onInput={(e) => setSigninData({...signinData(), email: e.currentTarget.value})}
+                      class="w-full pb-2 border-b border-gray-300 focus:border-black focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <input 
+                      type="password" 
+                      placeholder="Password"
+                      required
+                      value={signinData().password}
+                      onInput={(e) => setSigninData({...signinData(), password: e.currentTarget.value})}
+                      class="w-full pb-2 border-b border-gray-300 focus:border-black focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    disabled={loading() || !isSigninValid()}
+                    class={`w-full py-3 rounded-md font-medium transition-colors ${
+                      loading() || !isSigninValid()
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-black text-white hover:bg-gray-800'
+                    }`}
+                  >
+                    {loading() ? 'Masuk...' : 'Masuk'}
+                  </button>
+
+                  <div class="text-center">
+                    <a href="#" class="text-sm text-gray-600 hover:text-black">
+                      Lupa password?
+                    </a>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>

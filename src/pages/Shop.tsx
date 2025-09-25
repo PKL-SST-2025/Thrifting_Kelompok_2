@@ -1,11 +1,66 @@
-import { createSignal } from 'solid-js';
+import { createSignal, onMount } from 'solid-js';
 import { A } from '@solidjs/router';
+import { getProducts, getCurrentUser, isAuthenticated, type Product, type User } from '../lib/api';
 
 const Shop = () => {
   const [activeTab, setActiveTab] = createSignal('products');
+  const [loading, setLoading] = createSignal(true);
+  const [currentUser, setCurrentUser] = createSignal<User | null>(null);
+  const [allProducts, setAllProducts] = createSignal<Product[]>([]);
 
-  // Mock data untuk produk yang dijual
-  const [myProducts, setMyProducts] = createSignal([
+  // Load user's products from API
+  onMount(async () => {
+    if (!isAuthenticated()) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Get current user info
+      const user = await getCurrentUser();
+      setCurrentUser(user);
+
+      // Get all products and filter by current user
+      const products = await getProducts();
+      setAllProducts(products);
+    } catch (err) {
+      console.error("Failed to load user data:", err);
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  // Filter products by current user - fallback to mock data for now
+  const myProducts = () => {
+    if (!isAuthenticated()) return fallbackProducts();
+    
+    if (currentUser() && allProducts().length > 0) {
+      // Map API products to include status (assume all are active for now)
+      return allProducts()
+        .filter(product => product.seller_id === currentUser()!.id.toString())
+        .map(product => ({
+          ...product,
+          status: 'active', // Default status for API products
+          price: formatPrice(product.price)
+        }));
+    }
+    
+    return fallbackProducts();
+  };
+
+  // Format price helper
+  const formatPrice = (price: number | string) => {
+    if (typeof price === 'number') {
+      return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR'
+      }).format(price);
+    }
+    return price;
+  };
+
+  // Mock data untuk fallback
+  const [fallbackProducts, setFallbackProducts] = createSignal([
     {
       id: 1,
       name: 'Thrifting',
@@ -13,22 +68,6 @@ const Shop = () => {
       price: 'Rp. 129.000,00',
       image: '/placeholder-product.jpg',
       status: 'active'
-    },
-    {
-      id: 2,
-      name: 'Thrifting',
-      description: 'Vintage Jacket - Navy',
-      price: 'Rp. 250.000,00',
-      image: '/placeholder-product.jpg',
-      status: 'active'
-    },
-    {
-      id: 3,
-      name: 'Thrifting',
-      description: 'Denim Pants - Blue',
-      price: 'Rp. 180.000,00',
-      image: '/placeholder-product.jpg',
-      status: 'sold'
     },
     {
       id: 4,
@@ -57,13 +96,13 @@ const Shop = () => {
   ]);
 
   const handleEdit = (id: number) => {
-    // For demo, append " (Edited)" to description
-    setMyProducts(prev => prev.map(p => p.id === id ? { ...p, description: p.description + ' (Edited)' } : p));
+    // For demo with fallback data, append " (Edited)" to description
+    setFallbackProducts(prev => prev.map(p => p.id === id ? { ...p, description: p.description + ' (Edited)' } : p));
   };
 
   const handleDelete = (id: number) => {
     if (!confirm('Hapus produk ini?')) return;
-    setMyProducts(prev => prev.filter(p => p.id !== id));
+    setFallbackProducts(prev => prev.filter(p => p.id !== id));
   };
 
   return (

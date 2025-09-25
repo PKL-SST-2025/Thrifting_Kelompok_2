@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [solidPlugin(), tailwindcss()],
   server: {
     port: 3000,
+    strictPort: true, // Force port 3000, don't auto-increment
   },
   build: {
     target: 'esnext',

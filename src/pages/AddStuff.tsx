@@ -1,8 +1,11 @@
 import { createSignal } from 'solid-js';
+import { useNavigate } from '@solidjs/router';
+import { createProduct, isAuthenticated } from '../lib/api';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
 const AddStuff = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = createSignal({
     productName: '',
     description: '',
@@ -15,15 +18,65 @@ const AddStuff = () => {
   });
 
   const [isPreorder, setIsPreorder] = createSignal(false);
+  const [loading, setLoading] = createSignal(false);
+  const [uploadedImages, setUploadedImages] = createSignal<string[]>([]);
 
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: Event) => {
+  const handleSubmit = async (e: Event) => {
     e.preventDefault();
-    console.log('Form submitted:', formData());
-    // Add your submit logic here
+    
+    if (!isAuthenticated()) {
+      alert("Please login to add products");
+      return;
+    }
+
+    const data = formData();
+    
+    // Validation
+    if (!data.productName || !data.description || !data.category || !data.price || !data.condition) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const productPayload = {
+        name: data.productName,
+        description: data.description,
+        category: data.category,
+        price: parseFloat(data.price),
+        condition: data.condition,
+        images: uploadedImages() // Include uploaded images
+      };
+
+      await createProduct(productPayload);
+      alert("Product added successfully!");
+      
+      // Reset form
+      setFormData({
+        productName: '',
+        description: '',
+        category: '',
+        price: '',
+        stock: '',
+        minOrder: '',
+        condition: '',
+        contact: ''
+      });
+      setUploadedImages([]);
+      
+      // Navigate to products page
+      navigate("/products");
+    } catch (err) {
+      console.error("Failed to create product:", err);
+      alert("Failed to add product. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBackClick = () => {

@@ -1,7 +1,9 @@
-import { For, createMemo, createSignal } from 'solid-js';
+import { For, Show, createEffect, createMemo, createSignal, onMount } from 'solid-js';
 import { A } from '@solidjs/router';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import AuthModal from '../components/AuthModal';
+import { getWishlist, removeFromWishlist, isAuthenticated, type Product } from '../lib/api';
 
 type WishlistItem = {
   id: number;
@@ -35,8 +37,48 @@ const Wishlist = () => {
   // Local state
   const [selectedCategory, setSelectedCategory] = createSignal<string>('Semua');
   const [sortBy, setSortBy] = createSignal<'Terbaru' | 'Termurah' | 'Termahal' | 'Nama'>('Terbaru');
+  const [loading, setLoading] = createSignal(true);
+  const [apiWishlist, setApiWishlist] = createSignal<Product[]>([]);
+  const [showLoginModal, setShowLoginModal] = createSignal(false);
 
-  // Sample data (mapped to Indonesian categories)
+  // Load wishlist from API
+  onMount(async () => {
+    if (isAuthenticated()) {
+      try {
+        const wishlistData = await getWishlist();
+        setApiWishlist(wishlistData);
+      } catch (err) {
+        console.error("Failed to load wishlist:", err);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setLoading(false);
+      setShowLoginModal(true);
+    }
+  });
+
+  // Jika user logout di tengah-tengah
+  createEffect(() => {
+    if (!isAuthenticated()) {
+      setShowLoginModal(true);
+    }
+  });
+
+  const handleRemoveFromWishlist = async (id: number) => {
+    if (isAuthenticated()) {
+      try {
+        await removeFromWishlist(id);
+        setApiWishlist((prev) => prev.filter((p) => p.id !== id));
+      } catch (err) {
+        console.error("Failed to remove from wishlist:", err);
+      }
+    } else {
+      setShowLoginModal(true);
+    }
+  };
+
+  // Sample fallback data (mapped to Indonesian categories)
   const [wishlistItems, setWishlistItems] = createSignal<WishlistItem[]>([
     {
       id: 1,
@@ -112,10 +154,6 @@ const Wishlist = () => {
     },
   ]);
 
-  const removeFromWishlist = (id: number) => {
-    setWishlistItems((prev) => prev.filter((it) => it.id !== id));
-  };
-
   // Derived values
   const countsByCategory = createMemo(() => {
     const map = new Map<string, number>();
@@ -128,8 +166,29 @@ const Wishlist = () => {
     return map;
   });
 
+  // Convert API products to wishlist items format
+  const convertToWishlistItems = (products: Product[]): WishlistItem[] => {
+    return products.map(p => ({
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      originalPrice: Math.round(p.price * 1.2), // Assume 20% discount
+      image: p.images?.[0] || '/src/assets/1000021576.jpg',
+      seller: `Seller-${p.seller_id}`,
+      condition: p.condition,
+      category: p.category,
+      addedDate: p.created_at,
+      available: true
+    }));
+  };
+
   const filteredItems = createMemo(() => {
-    let list = wishlistItems().slice();
+    // Use API data if authenticated, otherwise use sample data
+    const items = isAuthenticated() && apiWishlist().length > 0 
+      ? convertToWishlistItems(apiWishlist())
+      : wishlistItems();
+    
+    let list = items.slice();
     if (selectedCategory() !== 'Semua') {
       list = list.filter((it) => it.category === selectedCategory());
     }
@@ -163,6 +222,30 @@ const Wishlist = () => {
   return (
     <div class="min-h-screen bg-gradient-to-b from-white to-gray-50">
       <Navbar />
+      <Show when={showLoginModal()}>
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div class="bg-white rounded-xl shadow-lg p-8 max-w-xs w-full text-center">
+            <h2 class="text-lg font-bold mb-2">Anda belum login</h2>
+            <p class="mb-4 text-gray-600">Login sekarang untuk menggunakan fitur wishlist.</p>
+            <button
+              class="w-full py-2 rounded-md bg-black text-white font-semibold hover:bg-gray-800 transition mb-2"
+              onClick={() => setShowLoginModal(false)}
+            >
+              Nanti Saja
+            </button>
+            <button
+              class="w-full py-2 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+              onClick={() => {
+                setShowLoginModal(false);
+                // Tampilkan AuthModal login
+                window.dispatchEvent(new CustomEvent('openAuthModal', { detail: { tab: 'signin' } }));
+              }}
+            >
+              Login Sekarang
+            </button>
+          </div>
+        </div>
+      </Show>
 
       {/* Content */}
       <section class="py-8 sm:py-10 lg:py-12">
@@ -255,10 +338,23 @@ const Wishlist = () => {
 
             {/* Products (right) */}
             <main class="col-span-12 md:col-span-9">
-              {/* Results header */}
-              <div class="text-sm text-gray-600 mb-3">
-                Hasil: {filteredItems().length} item
+              {/* Loading state */}
+            {loading() && (
+              <div class="text-center py-12">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                <p class="mt-2 text-gray-600">Loading wishlist...</p>
               </div>
+            )}
+
+            {/* Results header */}
+            {!loading() && (
+              <div class="text-sm text-gray-600 mb-3">
+                {isAuthenticated() ? 
+                  `Hasil: ${filteredItems().length} item dari wishlist Anda` :
+                  `Hasil: ${filteredItems().length} item (demo data)`
+                }
+              </div>
+            )}
 
               {/* Grid */}
               <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
@@ -284,7 +380,7 @@ const Wishlist = () => {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            removeFromWishlist(item.id);
+                            handleRemoveFromWishlist(item.id);
                           }}
                           class="absolute top-2 right-2 p-2 bg-white/90 rounded-full shadow hover:bg-gray-50"
                         >

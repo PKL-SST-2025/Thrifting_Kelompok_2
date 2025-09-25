@@ -1,11 +1,51 @@
-import { Component, createSignal } from "solid-js";
+import { Component, createSignal, onMount, createEffect } from "solid-js";
 import { A } from "@solidjs/router";
 import AuthModal from "../components/AuthModal";
+import { getCurrentUser, logout, isAuthenticated, type User } from "../lib/api";
 
 const Navbar: Component = () => {
   const [isMenuOpen, setIsMenuOpen] = createSignal(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = createSignal(false);
   const [authModalTab, setAuthModalTab] = createSignal<"signup" | "signin">("signup");
+  const [user, setUser] = createSignal<User | null>(null);
+  const [authenticated, setAuthenticated] = createSignal(false);
+
+  // Function to update auth state
+  const updateAuthState = () => {
+    setUser(getCurrentUser());
+    setAuthenticated(isAuthenticated());
+  };
+
+  onMount(() => {
+    updateAuthState();
+    
+    // Listen for storage changes (cross-tab login detection)
+    const handleStorageChange = () => {
+      console.log('🔄 Storage changed, updating auth state...');
+      updateAuthState();
+    };
+    
+    // Listen for custom auth state changes
+    const handleAuthStateChange = () => {
+      console.log('🔄 Auth state changed event received, updating...');
+      setTimeout(updateAuthState, 50); // Small delay to ensure localStorage is written
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('authStateChanged', handleAuthStateChange);
+    
+    // Check auth state periodically (less frequent to reduce API calls)
+    const interval = setInterval(() => {
+      updateAuthState();
+    }, 3000);
+    
+    // Cleanup listeners
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('authStateChanged', handleAuthStateChange);
+      clearInterval(interval);
+    };
+  });
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen());
 
@@ -22,6 +62,11 @@ const Navbar: Component = () => {
   };
 
   const closeAuthModal = () => setIsAuthModalOpen(false);
+
+  const handleLogout = () => {
+    logout();
+    updateAuthState();
+  };
 
   return (
     <nav class="bg-white shadow-md sticky top-0 z-50">
@@ -68,22 +113,35 @@ const Navbar: Component = () => {
               </svg>
             </A>
 
-            {/* Daftar and Masuk buttons - Right next to search */}
-            <div class="flex items-center space-x-2">
-              <span 
-                onClick={openSignUpModal}
-                class="text-sm text-gray-600 hover:text-gray-900 cursor-pointer transition-colors"
-              >
-                Sign Up
-              </span>
-              <span class="text-sm text-gray-400">|</span>
-              <span 
-                onClick={openSignInModal}
-                class="text-sm text-gray-600 hover:text-gray-900 cursor-pointer transition-colors"
-              >
-                Sign In
-              </span>
-            </div>
+            {/* Auth buttons or User menu */}
+            {authenticated() ? (
+              <div class="flex items-center space-x-2">
+                <span class="text-sm text-gray-700">Hi, {user()?.username}</span>
+                <span class="text-sm text-gray-400">|</span>
+                <button 
+                  onClick={handleLogout}
+                  class="text-sm text-gray-600 hover:text-gray-900 cursor-pointer transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div class="flex items-center space-x-2">
+                <span 
+                  onClick={openSignUpModal}
+                  class="text-sm text-gray-600 hover:text-gray-900 cursor-pointer transition-colors"
+                >
+                  Sign Up
+                </span>
+                <span class="text-sm text-gray-400">|</span>
+                <span 
+                  onClick={openSignInModal}
+                  class="text-sm text-gray-600 hover:text-gray-900 cursor-pointer transition-colors"
+                >
+                  Sign In
+                </span>
+              </div>
+            )}
 
             {/* Wishlist */}
             <A href="/wishlist" class="p-2 text-gray-600 hover:text-gray-900 transition-colors">
@@ -206,20 +264,36 @@ const Navbar: Component = () => {
                 Wishlist
               </A>
 
-              {/* Mobile Daftar/Masuk - Enhanced buttons */}
+              {/* Mobile Auth buttons or User menu */}
               <div class="border-t border-gray-200 pt-3 mt-3 px-4 space-y-3">
-                <button 
-                  onClick={openSignUpModal}
-                  class="w-full text-center py-3 text-base font-medium text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                >
-                  Sign Up
-                </button>
-                <button 
-                  onClick={openSignInModal}
-                  class="w-full text-center py-3 text-base font-medium text-white bg-gray-900 rounded-md hover:bg-gray-800 transition-colors"
-                >
-                  Sign In
-                </button>
+                {authenticated() ? (
+                  <>
+                    <div class="text-center py-2">
+                      <span class="text-gray-700">Hi, {user()?.username}</span>
+                    </div>
+                    <button 
+                      onClick={handleLogout}
+                      class="w-full text-center py-3 text-base font-medium text-white bg-gray-900 rounded-md hover:bg-gray-800 transition-colors"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button 
+                      onClick={openSignUpModal}
+                      class="w-full text-center py-3 text-base font-medium text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      Sign Up
+                    </button>
+                    <button 
+                      onClick={openSignInModal}
+                      class="w-full text-center py-3 text-base font-medium text-white bg-gray-900 rounded-md hover:bg-gray-800 transition-colors"
+                    >
+                      Sign In
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

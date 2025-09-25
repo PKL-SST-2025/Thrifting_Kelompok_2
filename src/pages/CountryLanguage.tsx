@@ -1,4 +1,5 @@
-import { createSignal, onMount } from 'solid-js';
+import { createSignal, onMount, Show } from 'solid-js';
+import { getUserSettings, updateUserSettings, testBackendConnection } from '../lib/api';
 
 const CountryLanguage = () => {
   const [selectedCountry, setSelectedCountry] = createSignal('Indonesia');
@@ -54,21 +55,64 @@ const CountryLanguage = () => {
     'GMT+9 (JST)'
   ];
 
-  const handleSaveSettings = () => {
+  const [saveStatus, setSaveStatus] = createSignal('');
+
+  const handleSaveSettings = async () => {
+    setSaveStatus('Menyimpan pengaturan...');
+    
     const payload = {
       country: selectedCountry(),
       language: selectedLanguage(),
       currency: selectedCurrency(),
       timezone: selectedTimezone(),
     };
+    
     try {
-      localStorage.setItem('localeSettings', JSON.stringify(payload));
-      console.log('Settings saved:', payload);
-      alert('Preferensi lokasi & bahasa disimpan');
-    } catch {}
+      // Test backend connection first
+      const backendOk = await testBackendConnection();
+      
+      if (backendOk) {
+        // Save to backend first
+        await updateUserSettings(payload);
+        console.log('✅ Settings saved to backend:', payload);
+        setSaveStatus('✅ Preferensi berhasil disimpan ke server');
+      } else {
+        throw new Error('Backend tidak terjangkau');
+      }
+    } catch (error) {
+      console.error('❌ Failed to save to backend:', error);
+      
+      // Fallback to localStorage if backend fails
+      try {
+        localStorage.setItem('localeSettings', JSON.stringify(payload));
+        console.log('Settings saved to localStorage:', payload);
+        setSaveStatus('⚠️ Preferensi disimpan lokal (server tidak terjangkau)');
+      } catch {
+        setSaveStatus('❌ Gagal menyimpan pengaturan');
+      }
+    }
+    
+    // Clear status after 3 seconds
+    setTimeout(() => setSaveStatus(''), 3000);
   };
 
-  onMount(() => {
+  onMount(async () => {
+    // Load user settings from backend first
+    try {
+      const settings = await getUserSettings();
+      if (settings) {
+        if (settings.country) setSelectedCountry(settings.country);
+        if (settings.language) setSelectedLanguage(settings.language);
+        if (settings.currency) setSelectedCurrency(settings.currency);
+        if (settings.timezone) setSelectedTimezone(settings.timezone);
+        console.log('Loaded locale settings from backend:', settings);
+        return;
+      }
+    } catch (error) {
+      console.log('Backend locale settings not available, using localStorage:', error);
+    }
+
+    // Fallback to localStorage if backend fails
     try {
       const raw = localStorage.getItem('localeSettings');
       if (raw) {
@@ -227,6 +271,18 @@ const CountryLanguage = () => {
             </div>
           </div>
         </div>
+
+        {/* Save Status */}
+        <Show when={saveStatus()}>
+          <div class={`p-3 rounded-lg text-sm ${
+            saveStatus().includes('✅') ? 'bg-green-100 text-green-800' :
+            saveStatus().includes('⚠️') ? 'bg-yellow-100 text-yellow-800' :
+            saveStatus().includes('❌') ? 'bg-red-100 text-red-800' :
+            'bg-blue-100 text-blue-800'
+          }`}>
+            {saveStatus()}
+          </div>
+        </Show>
 
         {/* Save Button */}
         <div class="pt-4">
